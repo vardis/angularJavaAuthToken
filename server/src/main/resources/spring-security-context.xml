@@ -1,0 +1,32 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+http://www.springframework.org/schema/security
+http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+
+    <bean id="ajaxAuthenticationEntryPoint" class="server.security.AjaxAuthenticationEntryPoint">
+        <property name="realmName" value="Youpload API" />
+    </bean>
+
+    <security:http use-expressions="true"
+                   create-session="stateless"
+                   auto-config="false"
+                   entry-point-ref="ajaxAuthenticationEntryPoint"
+                   authentication-manager-ref="authenticationManager">
+
+        <security:custom-filter ref="authenticationTokenProcessingFilter" position="FORM_LOGIN_FILTER"/>
+        <security:intercept-url requires-channel="https" pattern="/signIn" access="permitAll"/>
+        <security:intercept-url requires-channel="https" pattern="/signup" access="permitAll"/>
+        <security:intercept-url requires-channel="https" pattern="/**" access="isAuthenticated()"/>
+
+    </security:http>
+
+    <security:authentication-manager id="authenticationManager">
+        <security:authentication-provider user-service-ref="userService">
+            <security:password-encoder ref="passwordEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+</beans>
