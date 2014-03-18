@@ -5,21 +5,29 @@
     <div class="col-md-12 column">
     <p ng-show="loginFailed" class="alert-danger">Authentication failed. Check your credentials.</p>
 
-        <form class="form-horizontal" role="form" name="loginForm">            
-            <div class="form-group">
+        <form class="form-horizontal" role="form" name="loginForm" ng-submit="login()" >            
+            <div class="form-group" ng-class="{ 'has-error': loginForm.username.$invalid}">
                 <label for="user">username</label>
-                <input ng-model="username" name="username" type="user" class="form-control" id="user" required />
-                <span class="text-danger" ng-show="loginForm.username.$invalid">Please enter a value
-                </span>
+                <input  ng-model="username" name="username" type="text" class="form-control" id="user" required ng-minlength="3" />
+                <p class="text-danger" ng-show="loginForm.username.$pristine ">
+                    Please enter a value
+                </p>                    
+                <p class="text-danger" ng-show="loginForm.username.$error.minlength">
+                    Username is too short.
+                </p>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" ng-class="{ 'has-error': loginForm.password.$invalid}">
                 <label for="password">Password</label>
-                <input ng-model="password" name="password" type="password" class="form-control" id="password" required />
-                <span class="text-danger" ng-show="loginForm.password.$invalid ">Please enter a value
-                </span>                    
+                <input ng-model="password" name="password" type="password" class="form-control" id="password" required ng-minlength="3" />
+                <p class="text-danger" ng-show="loginForm.password.$pristine ">
+                    Please enter a value
+                </p>                    
+                <p class="text-danger" ng-show="loginForm.password.$error.minlength">
+                    Password is too short.
+                </p>
             </div>
-            <button type="button" class="btn btn-primary" ng-click="login()">Login</button>
+            <button type="button" class="btn btn-primary" ng-click="login()" ng-disabled="loginForm.$invalid">Login</button>
             <br/>
         </form>
     </div>
