@@ -1,69 +1,68 @@
 package server.security;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.codec.Hex;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import org.codehaus.jackson.annotate.JsonIgnore;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import server.account.Account;
 
 /**
- * username:expirationTime:secret
+ * username:secret
  */
 public class AuthenticationToken {
 
-    public static final String SALT = "xG47JD!·";
+    private String value;
 
-    @Value("${auth.token.duration.minutes}")
-    private long tokenDuration;
-
-    private String token;
-
+    @JsonIgnore
     private long expireTime;
 
+    @JsonIgnore
     private String userName;
 
+    @JsonIgnore
     private String secret;
 
-    public AuthenticationToken(UserDetails account) {
-        userName = account.getUsername();
-        secret = computeSignature(account);
-        expireTime = System.currentTimeMillis() + tokenDuration * 1000;
+    @JsonIgnore
+    private PasswordEncoder encoder;
 
-        StringBuilder signatureBuilder = new StringBuilder();
-        signatureBuilder.append(account.getUsername());
-        signatureBuilder.append(":");
-        signatureBuilder.append(expireTime);
-        signatureBuilder.append(":");
-        signatureBuilder.append(secret);
+    @JsonIgnore
+    private long tokenDurationInMinutes;
 
-        token = signatureBuilder.toString();
+    public AuthenticationToken(PasswordEncoder encoder, long tokenDurationInMinutes) {
+        this.encoder = encoder;
+        this.tokenDurationInMinutes = tokenDurationInMinutes;
     }
 
-    public AuthenticationToken(String authTokenValue) {
+    public void initFromAccount(Account account) {
+        userName = account.getUsername();
+        secret = computeSecret(account);
+        expireTime = System.currentTimeMillis() + tokenDurationInMinutes * 60 * 1000;
+        value = account.getUsername() + ":" + secret;
+    }
+
+    public void initFromTokenValue(String authTokenValue) {
         if (authTokenValue == null) {
             throw new IllegalArgumentException("Token is empty");
         }
 
         String[] parts = authTokenValue.split(":");
-        if (parts.length != 3) {
+        if (parts.length != 2) {
             throw new IllegalArgumentException("Invalid token format");
         }
 
         userName = parts[0];
-        expireTime = Long.valueOf(parts[1]);
-        secret = parts[2];
-        token = authTokenValue;
+        secret = parts[1];
 
         if (secret.length() == 0 || userName.length() == 0) {
             throw new IllegalArgumentException("Invalid token value");
         }
+
+        value = userName + ":" + secret;
     }
 
-    public boolean isValid(UserDetails account) {
-        if (account.getUsername().equalsIgnoreCase(userName)) {
-            if (expireTime < System.currentTimeMillis()) {
-                if (computeSignature(account).equals(secret)) {
+    public boolean isValid(Account account) {
+        if (account != null && account.getUsername().equalsIgnoreCase(userName)) {
+            AuthenticationToken existingToken = account.getAuthToken();
+            if (existingToken.getExpireTime() > System.currentTimeMillis()) {
+                if (encoder.matches(createRawSecret(account), secret)) {
                     return true;
                 }
             }
@@ -71,22 +70,12 @@ public class AuthenticationToken {
         return false;
     }
 
-    public static String computeSignature(UserDetails account) {
-        StringBuilder signatureBuilder = new StringBuilder();
-        signatureBuilder.append(account.getUsername());
-        signatureBuilder.append(":");
-        signatureBuilder.append(account.getPassword());
-        signatureBuilder.append(":");
-        signatureBuilder.append(SALT);
+    private String computeSecret(Account account) {
+        return encoder.encode(createRawSecret(account));
+    }
 
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("No MD5 algorithm available!");
-        }
-
-        return new String(Hex.encode(digest.digest(signatureBuilder.toString().getBytes())));
+    private String createRawSecret(Account account) {
+        return account.getUsername() + ":" + account.getPassword();
     }
 
     public String getUserName() {
@@ -95,6 +84,19 @@ public class AuthenticationToken {
 
     @Override
     public String toString() {
-        return token;
+        return value;
     }
+
+    public String getValue() {
+        return value;
+    }
+
+    public long getExpireTime() {
+        return expireTime;
+    }
+
+    public void setExpireTime(long expireTime) {
+        this.expireTime = expireTime;
+    }
+
 }

@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
+import server.account.Account;
 import server.account.AccountService;
 
 import javax.inject.Inject;
@@ -27,6 +28,9 @@ public class AuthenticationTokenProcessingFilter extends GenericFilterBean {
     @Inject
     private AccountService accountService;
 
+    @Inject
+    private AuthenticationTokenFactory tokenFactory;
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -39,10 +43,10 @@ public class AuthenticationTokenProcessingFilter extends GenericFilterBean {
         String tokenHeader = httpRequest.getHeader(SecurityHeaders.AUTH_TOKEN);
 
         if (StringUtils.hasLength(tokenHeader)) {
-            AuthenticationToken token = new AuthenticationToken(tokenHeader);
+            AuthenticationToken token = tokenFactory.fromAuthorizationHeader(tokenHeader);
 
             if (token.getUserName() != null) {
-                UserDetails userDetails = accountService.loadUserByUsername(token.getUserName());
+                Account userDetails = (Account) accountService.loadUserByUsername(token.getUserName());
                 if (token.isValid(userDetails)) {
                     setAuthenticationInSecurityContext((HttpServletRequest) request, userDetails);
                 }

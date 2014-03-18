@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.StringUtils;
 import server.security.AuthenticationToken;
+import server.security.AuthenticationTokenFactory;
 
 import javax.inject.Inject;
 import java.util.Collections;
@@ -28,6 +29,9 @@ public class AccountService implements UserDetailsService {
     @Inject
     private AuthenticationManager authenticationManager;
 
+    @Inject
+    private AuthenticationTokenFactory tokenFactory;
+
     /**
      * Implements the UserDetailsService.loadUserByUsername using the
      * AccountRepository to fetch the matching accounts.
@@ -42,7 +46,7 @@ public class AccountService implements UserDetailsService {
         if (acc == null) {
             throw new UsernameNotFoundException("user not found");
         }
-        return createUser(acc);
+        return acc;
     }
 
     /**
@@ -61,8 +65,8 @@ public class AccountService implements UserDetailsService {
         SecurityContextHolder.getContext().setAuthentication(fullAuthentication);
 
         Account account = accountRepository.findByUsername(username);
-        AuthenticationToken token = new AuthenticationToken(account);
-        account.setAuthToken(token.toString());
+        AuthenticationToken token = tokenFactory.fromAccount(account);
+        account.setAuthToken(token);
         return account;
     }
 

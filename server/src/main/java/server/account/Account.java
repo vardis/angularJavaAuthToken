@@ -4,6 +4,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import server.security.AuthenticationToken;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,7 +21,7 @@ public class Account implements UserDetails {
 
     private String email;
 
-    private String authToken;
+    private AuthenticationToken authToken;
 
     @JsonIgnore
     private String password;
@@ -90,11 +91,11 @@ public class Account implements UserDetails {
         return role;
     }
 
-    public String getAuthToken() {
+    public AuthenticationToken getAuthToken() {
         return authToken;
     }
 
-    public void setAuthToken(String authToken) {
+    public void setAuthToken(AuthenticationToken authToken) {
         this.authToken = authToken;
     }
 

@@ -29,7 +29,7 @@
 
             signedIn: function (user) {
                 status.user = user;
-                status.authToken = user.authToken;
+                status.authToken = user.authToken.value;
                 $cookieStore.put('ActiveAccount', status);
             },
 

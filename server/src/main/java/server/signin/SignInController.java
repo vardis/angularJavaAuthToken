@@ -42,7 +42,6 @@ public class SignInController {
         try {
             account = accountService.signIn(username, password);
         } catch (AuthenticationException e) {
-            e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
         return account;
